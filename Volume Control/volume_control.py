@@ -10,15 +10,14 @@ wcam,hcam=640,488
 cTime=0
 Ptime=0
 vol=0
-volBar=0
+volBar=400
+volPer=0
 
 cap=cv2.VideoCapture(0)
 cap.set(3,wcam)
 cap.set(4,hcam)
 
 detector=htm.handDetector(detectionCon=0.75)
-
-
 
 devices = AudioUtilities.GetSpeakers()
 interface = devices.Activate(
@@ -31,10 +30,6 @@ volume_range=volume.GetVolumeRange()
 min_vol=volume_range[0]
 max_vol=volume_range[1]
 
-
-
-
-
 while True:
     success,img=cap.read()
     img = detector.findHands(img)
@@ -44,7 +39,6 @@ while True:
         x1,y1=lmlist[4][1],lmlist[4][2]
         x2,y2=lmlist[8][1],lmlist[8][2]
         cx,cy=(x1+x2)//2,(y1+y2)//2
-        
         
         cv2.circle(img,(x1,y1),10,(255,0,255),cv2.FILLED)
         cv2.circle(img,(x2,y2),10,(255,0,255),cv2.FILLED)
@@ -56,23 +50,23 @@ while True:
         
         # Hand Range -> 50 to 300
         # Volume Range tested -> -96 to 0
-        vol=np.interp(length,[50,300],[min_vol,max_vol])
-        volBar=np.interp(length,[50,300],[0,max_vol])
-        print(vol)
+        vol=np.interp(length,[30,320],[-96,0])
+        volBar=np.interp(length,[30,320],[400,150])
+        volPer=np.interp(length,[30,320],[0,100])
+        #print(vol)
+        print(length,vol,volPer)
         volume.SetMasterVolumeLevel(vol, None)
-        
+        cv2.putText(img,f'Volume:{int(volPer)}%',(40,450),cv2.FONT_HERSHEY_COMPLEX,1,(255,0,0),2)        
         
         if length <=50:
             cv2.circle(img,(cx,cy),8,(0,255,0),cv2.FILLED)
                
-        
-        
-    
+    cv2.rectangle(img,(50,150),(85,400),(255,0,0,3),3)
+    cv2.rectangle(img,(50,int(volBar)),(85,400),(255,0,0),cv2.FILLED)
     
     cTime=time.time()
     fps=1/(cTime-Ptime)
     Ptime=cTime
-    
     
     cv2.putText(img,f'FPS:{int(fps)}',(40,50),cv2.FONT_HERSHEY_COMPLEX,1,(255,0,0),2)
     

@@ -23,6 +23,15 @@ while True:
     #print(results.multi_hand_landmarks)
     if results.multi_hand_landmarks:
         for handLMS in results.multi_hand_landmarks:
+            for id,lm in enumerate(handLMS.landmark):
+                #print(id,lm)
+                h,w,c=img.shape
+                cx,cy=  int(lm.x*w),int(lm.y*h)
+                if id==0:
+                    cv2.circle(img,(cx,cy),15,(255,0,255),cv2.FILLED)
+                
+                
+                
             mpDraw.draw_landmarks(img,handLMS,mpHands.HAND_CONNECTIONS )# mpHands.HAND_CONNECTIONS-To draw line between connectiong points
             
     
