@@ -74,7 +74,7 @@ while True:
         #print(x11,y11)  
         
         #Pixel Position wrt to screen
-        x=np.interp(x11,[0,640],[0,1920])
+        x=np.interp(x11,[0,640],[1920,0])
         y=np.interp(y11,[0,488],[0,1080])
         
         # Mouse Movement
