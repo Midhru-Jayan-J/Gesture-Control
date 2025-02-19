@@ -1,7 +1,7 @@
 import cv2
 import time
 import numpy as np
-import HandTrackingModule as htm
+import HandTrackingModule1 as htm
 import math
 from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
@@ -50,7 +50,7 @@ while True:
         
         # Hand Range -> 50 to 300
         # Volume Range tested -> -96 to 0
-        vol=np.interp(length,[30,320],[-96,0])
+        vol=np.interp(length,[30,320],[min_vol,max_vol])
         volBar=np.interp(length,[30,320],[400,150])
         volPer=np.interp(length,[30,320],[0,100])
         #print(vol)
