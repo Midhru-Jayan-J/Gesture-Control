@@ -61,7 +61,8 @@ cap=cv2.VideoCapture(0)
 while True:
     ret,frame=cap.read()
     frame=cv2.flip(frame,1)
-    hsv=cv2.colorChange(frame,cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
     
     u_hue=cv2.getTrackbarPos("Upper Hue","Color Detectors")
     u_saturation=cv2.getTrackbarPos("Upper Saturation","Color Detectors")
@@ -84,6 +85,24 @@ while True:
     cv2.putText(frame, "GREEN", (298, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, "RED", (420, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, "YELLOW", (520, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150,150,150), 2, cv2.LINE_AA)
+    
+    #Refinement of mask - erosion,opening,dilation
+    Mask=cv2.inRange(hsv,Lower_hsv,Upper_hsv)
+    print(Mask)
+    Mask=cv2.erode(Mask,kernel,iterations=1)
+    print(Mask)
+    Mask=cv2.morphologyEx(Mask,cv2.MORPH_OPEN,kernel)
+    print(Mask)
+    Mask=cv2.dilate(Mask,kernel,iterations=1)
+    
+    
+    #Detect the edges of teh mask and store only the 
+    cnts, _ = cv2.findContours(Mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    center =0
+    
+    
+
+    
     
     
     
