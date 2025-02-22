@@ -15,13 +15,14 @@ def setValues(x):
  
 #cv2.createTrackbar(trackbar_name, window_name, default_value, maximum_value, TrackbarCallback)
  
-cv2.namedWindow("Color detectors")
-cv2.createTrackbar("Upper Hue", "Color detectors", 153, 180, setValues)
-cv2.createTrackbar("Upper Saturation", "Color detectors", 255, 255, setValues)
-cv2.createTrackbar("Upper Value", "Color detectors", 255, 255, setValues)
-cv2.createTrackbar("Lower Hue", "Color detectors", 64, 180, setValues)
-cv2.createTrackbar("Lower Saturation", "Color detectors", 72, 255, setValues)
-cv2.createTrackbar("Lower Value", "Color detectors", 49, 255, setValues)
+cv2.namedWindow("Color Detectors")  # Use capitalized "D" everywhere
+
+cv2.createTrackbar("Upper Hue", "Color Detectors", 153, 180, setValues)
+cv2.createTrackbar("Upper Saturation", "Color Detectors", 255, 255, setValues)
+cv2.createTrackbar("Upper Value", "Color Detectors", 255, 255, setValues)
+cv2.createTrackbar("Lower Hue", "Color Detectors", 64, 180, setValues)
+cv2.createTrackbar("Lower Saturation", "Color Detectors", 72, 255, setValues)
+cv2.createTrackbar("Lower Value", "Color Detectors", 49, 255, setValues)
 
 
 bpoints=[deque(maxlen=1024)]
@@ -64,13 +65,13 @@ while True:
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     
-    u_hue=cv2.getTrackbarPos("Upper Hue","Color Detectors")
-    u_saturation=cv2.getTrackbarPos("Upper Saturation","Color Detectors")
-    u_value = cv2.getTrackbarPos("Upper Value", "Color detectors")
-    l_hue = cv2.getTrackbarPos("Lower Hue", "Color detectors")
-    l_saturation = cv2.getTrackbarPos("Lower Saturation", "Color detectors")
-    l_value = cv2.getTrackbarPos("Lower Value", "Color detectors")
-    
+    u_hue = cv2.getTrackbarPos("Upper Hue", "Color Detectors")
+    u_saturation = cv2.getTrackbarPos("Upper Saturation", "Color Detectors")
+    u_value = cv2.getTrackbarPos("Upper Value", "Color Detectors")
+    l_hue = cv2.getTrackbarPos("Lower Hue", "Color Detectors")
+    l_saturation = cv2.getTrackbarPos("Lower Saturation", "Color Detectors")
+    l_value = cv2.getTrackbarPos("Lower Value", "Color Detectors")
+
     Upper_hsv = np.array([u_hue,u_saturation,u_value])
     Lower_hsv = np.array([l_hue,l_saturation,l_value])
     
@@ -86,7 +87,7 @@ while True:
     cv2.putText(frame, "RED", (420, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, "YELLOW", (520, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150,150,150), 2, cv2.LINE_AA)
     
-    #Refinement of mask - erosion,opening,dilation
+    #Refinement of mask - erosion,opening,dilation - Detection of pointer
     Mask=cv2.inRange(hsv,Lower_hsv,Upper_hsv)
     print(Mask)
     Mask=cv2.erode(Mask,kernel,iterations=1)
@@ -96,18 +97,74 @@ while True:
     Mask=cv2.dilate(Mask,kernel,iterations=1)
     
     
-    #Detect the edges of teh mask and store only the 
+    #Detect the edges of teh mask and store only the endpoints alone
     cnts, _ = cv2.findContours(Mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     center =0
     
-    
+    if len(cnts)>0:
+        cnt=sorted(cnts,key=cv2.contourArea,reverse=True)[0]
+        ((x,y),radius)=cv2.minEnclosingCircle(cnt)
+        cv2.circle(frame,(int(x),int(y)),int(radius),(0,255.255),2)
+        
+        #calculating the center of the mass of contour
+        #m00 - 0th moment -> total are of the countor
+        #m10 - first order in x axis moment 
+        #m01 - first order in y axis moment
+        M = cv2.moments(cnt)
+        center = (int(M['m10'] / M['m00']), int(M['m01'] / M['m00']))
+        
+        if center[1] <= 65:
+            if 40 <= center[0] <= 140: # Clear Button
+                bpoints = [deque(maxlen=512)]
+                gpoints = [deque(maxlen=512)]
+                rpoints = [deque(maxlen=512)]
+                ypoints = [deque(maxlen=512)]
 
-    
-    
-    
+                blue_index = 0
+                green_index = 0
+                red_index = 0
+                yellow_index = 0
+
+                paintWindow[67:,:,:] = 255
+            elif 160 <= center[0] <= 255:
+                    colorIndex = 0 # Blue
+            elif 275 <= center[0] <= 370:
+                    colorIndex = 1 # Green
+            elif 390 <= center[0] <= 485:
+                    colorIndex = 2 # Red
+            elif 505 <= center[0] <= 600:
+                    colorIndex = 3 # Yellow
+                    
+            else :
+                if colorIndex == 0:
+                    bpoints[blue_index].appendleft(center)
+                elif colorIndex == 1:
+                    gpoints[green_index].appendleft(center)
+                elif colorIndex == 2:
+                    rpoints[red_index].appendleft(center)
+                elif colorIndex == 3:
+                    ypoints[yellow_index].appendleft(center)
+                    
+            
+        points=[bpoints,gpoints,]
+        for i in range(len(points)):
+            for j in range(len(points[i])):
+                for k in range(1, len(points[i][j])):
+                    if points[i][j][k - 1] is None or points[i][j][k] is None:
+                        continue
+                    cv2.line(frame, points[i][j][k - 1], points[i][j][k], colors[i], 2)
+                    cv2.line(paintWindow, points[i][j][k - 1], points[i][j][k], colors[i], 2)
+
+    # Show all the windows
+    cv2.imshow("Tracking", frame)
+    cv2.imshow("Paint", paintWindow)
+    cv2.imshow("mask",Mask)
+        
+        
     
     key = cv2.waitKey(1) & 0xFF
     if key == ord('q'):  
         break
 
+cap.release()
 cv2.destroyAllWindows()
